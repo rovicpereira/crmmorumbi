@@ -1,0 +1,184 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Papel {
+  admin
+  atendente
+}
+
+enum TipoCliente {
+  consumidor_final
+  construtor_profissional
+}
+
+enum DirecaoMensagem {
+  entrada
+  saida
+}
+
+enum TipoMensagem {
+  texto
+  imagem
+  audio
+  documento
+  figurinha
+  template
+  outro
+}
+
+enum StatusMensagem {
+  enviado
+  entregue
+  lido
+  falhou
+}
+
+enum StatusLembrete {
+  pendente
+  concluido
+  descartado
+}
+
+model Usuario {
+  id                    String     @id @default(cuid())
+  nome                  String
+  email                 String     @unique
+  senhaHash             String
+  papel                 Papel      @default(atendente)
+  ativo                 Boolean    @default(true)
+  criadoEm              DateTime   @default(now())
+
+  conversasResponsavel  Conversa[]      @relation("AtendenteResponsavel")
+  mensagensEnviadas     Mensagem[]
+  historicoEstagio      HistoricoEstagio[]
+  lembretesCriados      Lembrete[]      @relation("LembreteCriadoPor")
+  lembretesResponsavel  Lembrete[]      @relation("LembreteResponsavel")
+}
+
+model Cliente {
+  id               String      @id @default(cuid())
+  telefoneWhatsapp String      @unique
+  nome             String?
+  documento        String?
+  tipoCliente      TipoCliente @default(consumidor_final)
+  endereco         String?
+  observacoes      String?
+  criadoEm         DateTime    @default(now())
+  atualizadoEm     DateTime    @updatedAt
+
+  conversas        Conversa[]
+  lembretes        Lembrete[]
+}
+
+model EstagioFunil {
+  id        String   @id @default(cuid())
+  chave     String   @unique
+  rotulo    String
+  ordem     Int
+  cor       String   @default("#64748b")
+  final     Boolean  @default(false)
+
+  conversas               Conversa[]
+  historicoComoAnterior   HistoricoEstagio[] @relation("EstagioAnterior")
+  historicoComoNovo       HistoricoEstagio[] @relation("EstagioNovo")
+}
+
+model Conversa {
+  id                       String    @id @default(cuid())
+  clienteId                String
+  cliente                  Cliente   @relation(fields: [clienteId], references: [id])
+  atendenteResponsavelId   String?
+  atendenteResponsavel     Usuario?  @relation("AtendenteResponsavel", fields: [atendenteResponsavelId], references: [id])
+  estagioFunilId           String
+  estagioFunil             EstagioFunil @relation(fields: [estagioFunilId], references: [id])
+  ultimaMensagemEm         DateTime?
+  ultimaMensagemInboundEm  DateTime?
+  naoLidas                 Int       @default(0)
+  criadoEm                 DateTime  @default(now())
+
+  mensagens                Mensagem[]
+  historicoEstagio         HistoricoEstagio[]
+  lembretes                Lembrete[]
+
+  @@index([atendenteResponsavelId])
+  @@index([estagioFunilId])
+}
+
+model HistoricoEstagio {
+  id                String        @id @default(cuid())
+  conversaId        String
+  conversa          Conversa      @relation(fields: [conversaId], references: [id])
+  estagioAnteriorId String?
+  estagioAnterior   EstagioFunil? @relation("EstagioAnterior", fields: [estagioAnteriorId], references: [id])
+  estagioNovoId     String
+  estagioNovo       EstagioFunil  @relation("EstagioNovo", fields: [estagioNovoId], references: [id])
+  usuarioId         String?
+  usuario           Usuario?      @relation(fields: [usuarioId], references: [id])
+  criadoEm          DateTime      @default(now())
+}
+
+model Mensagem {
+  id                String          @id @default(cuid())
+  conversaId        String
+  conversa          Conversa        @relation(fields: [conversaId], references: [id])
+  direcao           DirecaoMensagem
+  usuarioId         String?
+  usuario           Usuario?        @relation(fields: [usuarioId], references: [id])
+  whatsappMessageId String?         @unique
+  tipo              TipoMensagem    @default(texto)
+  texto             String?
+  templateNome      String?
+  status            StatusMensagem  @default(enviado)
+  timestamp         DateTime        @default(now())
+
+  midia             Midia?
+
+  @@index([conversaId])
+}
+
+model Midia {
+  id                 String   @id @default(cuid())
+  mensagemId         String   @unique
+  mensagem           Mensagem @relation(fields: [mensagemId], references: [id])
+  whatsappMediaId    String?
+  mimeType           String?
+  caminhoArmazenamento String?
+  tamanhoBytes       Int?
+  baixadoEm          DateTime?
+}
+
+model Lembrete {
+  id                     String         @id @default(cuid())
+  clienteId              String
+  cliente                Cliente        @relation(fields: [clienteId], references: [id])
+  conversaId             String?
+  conversa               Conversa?      @relation(fields: [conversaId], references: [id])
+  criadoPorUsuarioId     String?
+  criadoPorUsuario       Usuario?       @relation("LembreteCriadoPor", fields: [criadoPorUsuarioId], references: [id])
+  atendenteResponsavelId String?
+  atendenteResponsavel   Usuario?       @relation("LembreteResponsavel", fields: [atendenteResponsavelId], references: [id])
+  titulo                 String
+  nota                   String?
+  dataVencimento         DateTime
+  status                 StatusLembrete @default(pendente)
+  origemAutomatica       Boolean        @default(false)
+  criadoEm               DateTime       @default(now())
+
+  @@index([atendenteResponsavelId])
+  @@index([status])
+}
+
+model TemplateWhatsapp {
+  id                 String   @id @default(cuid())
+  nome               String   @unique
+  idioma             String   @default("pt_BR")
+  categoria          String
+  variaveisEsperadas Int      @default(0)
+  ativo              Boolean  @default(true)
+}

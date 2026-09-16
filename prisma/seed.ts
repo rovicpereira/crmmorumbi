@@ -1,0 +1,50 @@
+import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
+
+const prisma = new PrismaClient();
+
+const ESTAGIOS_PADRAO = [
+  { chave: "novo_lead", rotulo: "Novo lead", ordem: 1, cor: "#3b82f6", final: false },
+  { chave: "orcamento_enviado", rotulo: "Orçamento enviado", ordem: 2, cor: "#f59e0b", final: false },
+  { chave: "negociacao", rotulo: "Negociação", ordem: 3, cor: "#a855f7", final: false },
+  { chave: "fechado", rotulo: "Fechado", ordem: 4, cor: "#22c55e", final: true },
+  { chave: "perdido", rotulo: "Perdido", ordem: 5, cor: "#ef4444", final: true },
+];
+
+async function main() {
+  for (const estagio of ESTAGIOS_PADRAO) {
+    await prisma.estagioFunil.upsert({
+      where: { chave: estagio.chave },
+      update: {},
+      create: estagio,
+    });
+  }
+
+  const emailAdmin = process.env.SEED_ADMIN_EMAIL ?? "admin@morumbi.local";
+  const senhaAdmin = process.env.SEED_ADMIN_SENHA ?? "trocar-esta-senha";
+
+  const senhaHash = await bcrypt.hash(senhaAdmin, 10);
+
+  await prisma.usuario.upsert({
+    where: { email: emailAdmin },
+    update: {},
+    create: {
+      nome: "Administrador",
+      email: emailAdmin,
+      senhaHash,
+      papel: "admin",
+    },
+  });
+
+  console.log(`Seed concluído. Login inicial: ${emailAdmin} / ${senhaAdmin}`);
+  console.log("Troque a senha assim que possível.");
+}
+
+main()
+  .catch((erro) => {
+    console.error(erro);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

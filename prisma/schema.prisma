@@ -45,6 +45,12 @@ enum StatusLembrete {
   descartado
 }
 
+enum TipoAtendimento {
+  orcamento_obra
+  pesquisa_rapida
+  fora_do_mix
+}
+
 model Usuario {
   id                    String     @id @default(cuid())
   nome                  String
@@ -95,8 +101,10 @@ model Conversa {
   cliente                  Cliente   @relation(fields: [clienteId], references: [id])
   atendenteResponsavelId   String?
   atendenteResponsavel     Usuario?  @relation("AtendenteResponsavel", fields: [atendenteResponsavelId], references: [id])
-  estagioFunilId           String
-  estagioFunil             EstagioFunil @relation(fields: [estagioFunilId], references: [id])
+  tipoAtendimento          TipoAtendimento @default(orcamento_obra)
+  estagioFunilId           String?
+  estagioFunil             EstagioFunil? @relation(fields: [estagioFunilId], references: [id])
+  resolvido                Boolean   @default(false)
   ultimaMensagemEm         DateTime?
   ultimaMensagemInboundEm  DateTime?
   naoLidas                 Int       @default(0)
@@ -108,6 +116,7 @@ model Conversa {
 
   @@index([atendenteResponsavelId])
   @@index([estagioFunilId])
+  @@index([tipoAtendimento])
 }
 
 model HistoricoEstagio {

@@ -7,7 +7,8 @@ export default async function FunilPage() {
     <div className="p-8">
       <h1 className="text-lg font-semibold text-slate-900">Funil de vendas</h1>
       <p className="mt-2 text-sm text-slate-500">
-        O quadro (kanban) com as conversas será construído na Fase 4. Estágios já cadastrados:
+        O quadro (kanban) com as conversas será construído na Fase 4 — só entram aqui conversas
+        classificadas como &quot;Orçamento de obra&quot;. Estágios já cadastrados:
       </p>
 
       <div className="mt-4 flex gap-3">

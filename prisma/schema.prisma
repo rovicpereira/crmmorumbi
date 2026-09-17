@@ -9,7 +9,11 @@ datasource db {
 
 enum Papel {
   admin
-  atendente
+  gerente_geral
+  gerente_comercial
+  vendedor
+  caixa
+  responsavel_expedicao
 }
 
 enum TipoCliente {
@@ -56,7 +60,7 @@ model Usuario {
   nome                  String
   email                 String     @unique
   senhaHash             String
-  papel                 Papel      @default(atendente)
+  papel                 Papel      @default(vendedor)
   ativo                 Boolean    @default(true)
   criadoEm              DateTime   @default(now())
 
@@ -65,6 +69,8 @@ model Usuario {
   historicoEstagio      HistoricoEstagio[]
   lembretesCriados      Lembrete[]      @relation("LembreteCriadoPor")
   lembretesResponsavel  Lembrete[]      @relation("LembreteResponsavel")
+  mensagensChatEnviadas   MensagemChat[] @relation("ChatRemetente")
+  mensagensChatRecebidas  MensagemChat[] @relation("ChatDestinatario")
 }
 
 model Cliente {
@@ -190,4 +196,18 @@ model TemplateWhatsapp {
   categoria          String
   variaveisEsperadas Int      @default(0)
   ativo              Boolean  @default(true)
+}
+
+model MensagemChat {
+  id             String   @id @default(cuid())
+  remetenteId    String
+  remetente      Usuario  @relation("ChatRemetente", fields: [remetenteId], references: [id])
+  destinatarioId String
+  destinatario   Usuario  @relation("ChatDestinatario", fields: [destinatarioId], references: [id])
+  texto          String
+  lida           Boolean  @default(false)
+  criadoEm       DateTime @default(now())
+
+  @@index([remetenteId])
+  @@index([destinatarioId])
 }

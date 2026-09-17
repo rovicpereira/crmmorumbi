@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
+import { temAcessoCRM } from "@/lib/permissoes";
 
-const ITENS_NAV = [
+const ITENS_NAV_CRM = [
   { href: "/inbox", rotulo: "Inbox" },
   { href: "/funil", rotulo: "Funil" },
   { href: "/clientes", rotulo: "Clientes" },
@@ -15,6 +16,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const ehAdmin = session?.user?.papel === "admin";
+  const acessoCRM = temAcessoCRM(session?.user?.papel);
 
   return (
     <aside className="flex h-screen w-56 flex-col border-r border-slate-200 bg-white">
@@ -24,22 +26,34 @@ export function Sidebar() {
       </div>
 
       <nav className="flex-1 space-y-1 px-2 py-4">
-        {ITENS_NAV.map((item) => {
-          const ativo = pathname?.startsWith(item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`block rounded-md px-3 py-2 text-sm font-medium ${
-                ativo
-                  ? "bg-brand-50 text-brand-700"
-                  : "text-slate-600 hover:bg-slate-100"
-              }`}
-            >
-              {item.rotulo}
-            </Link>
-          );
-        })}
+        {acessoCRM &&
+          ITENS_NAV_CRM.map((item) => {
+            const ativo = pathname?.startsWith(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`block rounded-md px-3 py-2 text-sm font-medium ${
+                  ativo
+                    ? "bg-brand-50 text-brand-700"
+                    : "text-slate-600 hover:bg-slate-100"
+                }`}
+              >
+                {item.rotulo}
+              </Link>
+            );
+          })}
+
+        <Link
+          href="/chat"
+          className={`block rounded-md px-3 py-2 text-sm font-medium ${
+            pathname?.startsWith("/chat")
+              ? "bg-brand-50 text-brand-700"
+              : "text-slate-600 hover:bg-slate-100"
+          }`}
+        >
+          Chat da equipe
+        </Link>
 
         {ehAdmin && (
           <Link

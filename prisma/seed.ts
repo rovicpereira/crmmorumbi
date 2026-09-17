@@ -36,6 +36,25 @@ async function main() {
     },
   });
 
+  const emailExtra = process.env.SEED_EXTRA_ADMIN_EMAIL;
+  const senhaExtra = process.env.SEED_EXTRA_ADMIN_SENHA;
+  const nomeExtra = process.env.SEED_EXTRA_ADMIN_NOME ?? "Administrador";
+
+  if (emailExtra && senhaExtra) {
+    const senhaExtraHash = await bcrypt.hash(senhaExtra, 10);
+    await prisma.usuario.upsert({
+      where: { email: emailExtra },
+      update: {},
+      create: {
+        nome: nomeExtra,
+        email: emailExtra,
+        senhaHash: senhaExtraHash,
+        papel: "admin",
+      },
+    });
+    console.log(`Usuario adicional criado: ${emailExtra}`);
+  }
+
   console.log(`Seed concluído. Login inicial: ${emailAdmin} / ${senhaAdmin}`);
   console.log("Troque a senha assim que possível.");
 }

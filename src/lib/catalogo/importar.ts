@@ -1,5 +1,6 @@
 import * as XLSX from "xlsx";
 import { db } from "@/lib/db";
+import { normalizar, mapearColunas } from "@/lib/planilha/utils";
 
 type ColunaChave = "sku" | "nome" | "categoria" | "precoVenda" | "unidade" | "estoqueDisponivel";
 
@@ -11,28 +12,6 @@ const ALIASES: Record<ColunaChave, string[]> = {
   unidade: ["unidade", "un", "medida", "unid"],
   estoqueDisponivel: ["estoque", "quantidade", "qtd", "saldo", "estoque disponivel"],
 };
-
-function normalizar(texto: unknown): string {
-  return String(texto ?? "")
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .trim()
-    .toLowerCase();
-}
-
-function mapearColunas(cabecalho: string[]): Partial<Record<ColunaChave, number>> {
-  const normalizados = cabecalho.map(normalizar);
-  const mapa: Partial<Record<ColunaChave, number>> = {};
-
-  for (const chave of Object.keys(ALIASES) as ColunaChave[]) {
-    const indice = normalizados.findIndex((coluna) => ALIASES[chave].includes(coluna));
-    if (indice !== -1) {
-      mapa[chave] = indice;
-    }
-  }
-
-  return mapa;
-}
 
 export type ResultadoImportacao = {
   criados: number;
@@ -61,7 +40,7 @@ export async function importarCatalogoDeArquivo(buffer: Buffer): Promise<Resulta
   }
 
   const cabecalho = linhas[0].map((valor) => String(valor ?? ""));
-  const colunas = mapearColunas(cabecalho);
+  const colunas = mapearColunas(cabecalho, ALIASES);
 
   if (colunas.sku === undefined || colunas.nome === undefined || colunas.precoVenda === undefined) {
     return {

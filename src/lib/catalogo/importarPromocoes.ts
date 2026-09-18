@@ -1,5 +1,6 @@
 import * as XLSX from "xlsx";
 import { db } from "@/lib/db";
+import { mapearColunas, parseDataInicio, parseDataFim } from "@/lib/planilha/utils";
 
 type ColunaChave = "sku" | "precoPromocional" | "dataInicio" | "dataFim";
 
@@ -16,58 +17,6 @@ const ALIASES: Record<ColunaChave, string[]> = {
   dataInicio: ["data inicio", "inicio", "data de inicio", "vigencia inicio", "inicio da promocao"],
   dataFim: ["data fim", "fim", "data de fim", "vigencia fim", "validade", "fim da promocao"],
 };
-
-function normalizar(texto: unknown): string {
-  return String(texto ?? "")
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .trim()
-    .toLowerCase();
-}
-
-function mapearColunas(cabecalho: string[]): Partial<Record<ColunaChave, number>> {
-  const normalizados = cabecalho.map(normalizar);
-  const mapa: Partial<Record<ColunaChave, number>> = {};
-
-  for (const chave of Object.keys(ALIASES) as ColunaChave[]) {
-    const indice = normalizados.findIndex((coluna) => ALIASES[chave].includes(coluna));
-    if (indice !== -1) {
-      mapa[chave] = indice;
-    }
-  }
-
-  return mapa;
-}
-
-function parseDataBase(valor: unknown): Date | null {
-  if (valor instanceof Date && !Number.isNaN(valor.getTime())) {
-    return valor;
-  }
-
-  const texto = String(valor ?? "").trim();
-  const match = texto.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
-
-  if (match) {
-    const [, dia, mes, anoTexto] = match;
-    const ano = anoTexto.length === 2 ? 2000 + parseInt(anoTexto, 10) : parseInt(anoTexto, 10);
-    return new Date(Date.UTC(ano, parseInt(mes, 10) - 1, parseInt(dia, 10)));
-  }
-
-  const tentativa = new Date(texto);
-  return Number.isNaN(tentativa.getTime()) ? null : tentativa;
-}
-
-function parseDataInicio(valor: unknown): Date | null {
-  const data = parseDataBase(valor);
-  if (!data) return null;
-  return new Date(Date.UTC(data.getUTCFullYear(), data.getUTCMonth(), data.getUTCDate(), 0, 0, 0));
-}
-
-function parseDataFim(valor: unknown): Date | null {
-  const data = parseDataBase(valor);
-  if (!data) return null;
-  return new Date(Date.UTC(data.getUTCFullYear(), data.getUTCMonth(), data.getUTCDate(), 23, 59, 59, 999));
-}
 
 export type ResultadoImportacaoPromocoes = {
   criados: number;
@@ -96,7 +45,7 @@ export async function importarPromocoesDeArquivo(buffer: Buffer): Promise<Result
   }
 
   const cabecalho = linhas[0].map((valor) => String(valor ?? ""));
-  const colunas = mapearColunas(cabecalho);
+  const colunas = mapearColunas(cabecalho, ALIASES);
 
   if (
     colunas.sku === undefined ||

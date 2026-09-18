@@ -203,7 +203,39 @@ model CategoriaProduto {
   nome     String    @unique
   ordem    Int       @default(0)
 
-  produtos Produto[]
+  produtos              Produto[]
+  diretriz              DiretrizComercial?
+  diretrizesTemporarias DiretrizComercialTemporaria[]
+}
+
+model DiretrizComercial {
+  id                       String           @id @default(cuid())
+  categoriaId              String           @unique
+  categoria                CategoriaProduto @relation(fields: [categoriaId], references: [id])
+  descontoMaximoPercentual Decimal?         @db.Decimal(5, 2)
+  valorMaximoAutonomo      Decimal?         @db.Decimal(10, 2)
+  formasPagamentoAceitas   String?
+  regrasLivres             String?
+  criadoEm                 DateTime         @default(now())
+  atualizadoEm             DateTime         @updatedAt
+}
+
+model DiretrizComercialTemporaria {
+  id                       String           @id @default(cuid())
+  categoriaId              String
+  categoria                CategoriaProduto @relation(fields: [categoriaId], references: [id])
+  descontoMaximoPercentual Decimal?         @db.Decimal(5, 2)
+  valorMaximoAutonomo      Decimal?         @db.Decimal(10, 2)
+  formasPagamentoAceitas   String?
+  regrasLivres             String?
+  dataInicio               DateTime
+  dataFim                  DateTime
+  ativo                    Boolean          @default(true)
+  criadoEm                 DateTime         @default(now())
+
+  @@unique([categoriaId, dataInicio, dataFim])
+  @@index([categoriaId])
+  @@index([dataInicio, dataFim])
 }
 
 model Produto {

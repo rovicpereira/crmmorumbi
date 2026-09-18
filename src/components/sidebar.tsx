@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { temAcessoCRM } from "@/lib/permissoes";
+import { temAcessoCRM, temAcessoDiretrizes } from "@/lib/permissoes";
 
 const ITENS_NAV_CRM = [
   { href: "/inbox", rotulo: "Inbox" },
@@ -18,6 +18,7 @@ export function Sidebar() {
   const { data: session } = useSession();
   const ehAdmin = session?.user?.papel === "admin";
   const acessoCRM = temAcessoCRM(session?.user?.papel);
+  const acessoDiretrizes = temAcessoDiretrizes(session?.user?.papel);
 
   return (
     <aside className="flex h-screen w-56 flex-col border-r border-slate-200 bg-white">
@@ -55,6 +56,19 @@ export function Sidebar() {
         >
           Chat da equipe
         </Link>
+
+        {acessoDiretrizes && (
+          <Link
+            href="/diretrizes"
+            className={`block rounded-md px-3 py-2 text-sm font-medium ${
+              pathname?.startsWith("/diretrizes")
+                ? "bg-brand-50 text-brand-700"
+                : "text-slate-600 hover:bg-slate-100"
+            }`}
+          >
+            Diretrizes comerciais
+          </Link>
+        )}
 
         {ehAdmin && (
           <Link

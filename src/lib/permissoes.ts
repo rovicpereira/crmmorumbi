@@ -9,6 +9,12 @@ export function temAcessoCRM(papel: string | undefined | null): boolean {
   return !!papel && (PAPEIS_COM_ACESSO_CRM as readonly string[]).includes(papel);
 }
 
+export const PAPEIS_COM_ACESSO_DIRETRIZES = ["admin", "gerente_geral"] as const;
+
+export function temAcessoDiretrizes(papel: string | undefined | null): boolean {
+  return !!papel && (PAPEIS_COM_ACESSO_DIRETRIZES as readonly string[]).includes(papel);
+}
+
 export const ROTULOS_PAPEL: Record<string, string> = {
   admin: "Administrador",
   gerente_geral: "Gerente geral",

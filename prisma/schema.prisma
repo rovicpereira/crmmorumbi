@@ -262,6 +262,7 @@ model Produto {
   atualizadoEm      DateTime          @updatedAt
 
   promocoes         Promocao[]
+  faixasPreco       FaixaPrecoProduto[]
 
   @@index([categoriaId])
   @@index([nome])
@@ -280,6 +281,19 @@ model Promocao {
   @@unique([produtoId, dataInicio, dataFim])
   @@index([produtoId])
   @@index([dataInicio, dataFim])
+}
+
+model FaixaPrecoProduto {
+  id               String   @id @default(cuid())
+  produtoId        String
+  produto          Produto  @relation(fields: [produtoId], references: [id])
+  quantidadeMinima Decimal  @db.Decimal(10, 2)
+  quantidadeMaxima Decimal? @db.Decimal(10, 2)
+  precoPorUnidade  Decimal  @db.Decimal(10, 2)
+  criadoEm         DateTime @default(now())
+
+  @@unique([produtoId, quantidadeMinima])
+  @@index([produtoId])
 }
 
 model MensagemChat {

@@ -12,6 +12,7 @@ export default async function CatalogoPage() {
           where: { ativo: true, dataInicio: { lte: agora }, dataFim: { gte: agora } },
           take: 1,
         },
+        faixasPreco: { orderBy: { quantidadeMinima: "asc" } },
       },
       orderBy: { nome: "asc" },
       take: 100,

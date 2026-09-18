@@ -1,12 +1,14 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { importarCatalogo, importarPromocoes, buscarProdutos } from "@/lib/catalogo/actions";
+import { importarCatalogo, importarPromocoes, importarFaixasPreco, buscarProdutos } from "@/lib/catalogo/actions";
 import type { ResultadoImportacao } from "@/lib/catalogo/importar";
 import type { ResultadoImportacaoPromocoes } from "@/lib/catalogo/importarPromocoes";
+import type { ResultadoImportacaoFaixas } from "@/lib/catalogo/importarFaixasPreco";
 
 type Categoria = { id: string; nome: string; ordem: number };
 type Promocao = { precoPromocional: unknown; dataFim: string | Date };
+type FaixaPreco = { quantidadeMinima: unknown; quantidadeMaxima: unknown | null; precoPorUnidade: unknown };
 type Produto = {
   id: string;
   sku: string;
@@ -17,7 +19,15 @@ type Produto = {
   ativo: boolean;
   categoria: Categoria | null;
   promocoes: Promocao[];
+  faixasPreco: FaixaPreco[];
 };
+
+function formatarFaixa(faixa: FaixaPreco): string {
+  const min = Number(faixa.quantidadeMinima);
+  const max = faixa.quantidadeMaxima === null ? null : Number(faixa.quantidadeMaxima);
+  const preco = formatarPreco(faixa.precoPorUnidade);
+  return max === null ? `${min}+: ${preco}` : `${min}–${max}: ${preco}`;
+}
 
 function formatarPreco(preco: unknown): string {
   const numero = typeof preco === "number" ? preco : parseFloat(String(preco));
@@ -41,8 +51,11 @@ export function CatalogoClient({
   const [resultado, setResultado] = useState<ResultadoImportacao | null>(null);
   const [importandoPromocoes, setImportandoPromocoes] = useState(false);
   const [resultadoPromocoes, setResultadoPromocoes] = useState<ResultadoImportacaoPromocoes | null>(null);
+  const [importandoFaixas, setImportandoFaixas] = useState(false);
+  const [resultadoFaixas, setResultadoFaixas] = useState<ResultadoImportacaoFaixas | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const formPromocoesRef = useRef<HTMLFormElement>(null);
+  const formFaixasRef = useRef<HTMLFormElement>(null);
 
   async function handleBuscar(novoTermo: string, novaCategoriaId: string) {
     setBuscando(true);
@@ -79,6 +92,20 @@ export function CatalogoClient({
     setResultadoPromocoes(resultadoImportacao);
     setImportandoPromocoes(false);
     formPromocoesRef.current?.reset();
+    handleBuscar(termo, categoriaId);
+  }
+
+  async function handleImportarFaixas(evento: React.FormEvent<HTMLFormElement>) {
+    evento.preventDefault();
+    setImportandoFaixas(true);
+    setResultadoFaixas(null);
+
+    const formData = new FormData(evento.currentTarget);
+    const resultadoImportacao = await importarFaixasPreco(formData);
+
+    setResultadoFaixas(resultadoImportacao);
+    setImportandoFaixas(false);
+    formFaixasRef.current?.reset();
     handleBuscar(termo, categoriaId);
   }
 
@@ -173,6 +200,53 @@ export function CatalogoClient({
         )}
       </div>
 
+      <div className="mt-8">
+        <h2 className="text-sm font-semibold text-slate-900">Preços por faixa de quantidade</h2>
+        <p className="mt-1 max-w-2xl text-sm text-slate-500">
+          Para produtos como areia e brita, cujo preço por unidade muda conforme a quantidade
+          pedida. Suba uma planilha com SKU, Quantidade Mínima, Quantidade Máxima (deixe em branco
+          se não houver limite superior) e Preço por Unidade. O valor final é calculado
+          automaticamente pela faixa — o cliente só recebe o total, nunca a tabela de faixas.
+        </p>
+
+        <form
+          ref={formFaixasRef}
+          onSubmit={handleImportarFaixas}
+          className="mt-3 flex flex-wrap items-center gap-3 rounded-md border border-slate-200 bg-white p-4"
+        >
+          <input
+            type="file"
+            name="arquivo"
+            accept=".xlsx,.xls,.csv"
+            required
+            className="text-sm text-slate-700"
+          />
+          <button
+            type="submit"
+            disabled={importandoFaixas}
+            className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60"
+          >
+            {importandoFaixas ? "Importando..." : "Importar faixas de preço"}
+          </button>
+        </form>
+
+        {resultadoFaixas && (
+          <div className="mt-3 rounded-md border border-slate-200 bg-white p-4 text-sm">
+            <p className="font-medium text-slate-800">
+              Importação concluída: {resultadoFaixas.criadas} criada(s),{" "}
+              {resultadoFaixas.atualizadas} atualizada(s), {resultadoFaixas.ignoradas} ignorada(s).
+            </p>
+            {resultadoFaixas.erros.length > 0 && (
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-amber-700">
+                {resultadoFaixas.erros.map((erro, indice) => (
+                  <li key={indice}>{erro}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+      </div>
+
       <div className="mt-6 flex flex-wrap gap-3">
         <input
           value={termo}
@@ -229,6 +303,15 @@ export function CatalogoClient({
                       </span>
                       <span className="ml-1 rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">
                         PROMOÇÃO
+                      </span>
+                    </span>
+                  ) : produto.faixasPreco.length > 0 ? (
+                    <span>
+                      <span className="rounded bg-sky-50 px-1.5 py-0.5 text-[10px] font-medium text-sky-700">
+                        POR QUANTIDADE
+                      </span>
+                      <span className="mt-1 block text-xs text-slate-500">
+                        {produto.faixasPreco.map(formatarFaixa).join(" · ")}
                       </span>
                     </span>
                   ) : (

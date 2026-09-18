@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { temAcessoCRM } from "@/lib/permissoes";
 import { importarCatalogoDeArquivo, type ResultadoImportacao } from "@/lib/catalogo/importar";
 import { importarPromocoesDeArquivo, type ResultadoImportacaoPromocoes } from "@/lib/catalogo/importarPromocoes";
+import { importarFaixasPrecoDeArquivo, type ResultadoImportacaoFaixas } from "@/lib/catalogo/importarFaixasPreco";
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 
@@ -66,7 +67,11 @@ export async function buscarProdutos(termo: string, categoriaId?: string) {
           }
         : {}),
     },
-    include: { categoria: true, promocoes: filtroPromocaoAtivaAgora() },
+    include: {
+      categoria: true,
+      promocoes: filtroPromocaoAtivaAgora(),
+      faixasPreco: { orderBy: { quantidadeMinima: "asc" } },
+    },
     orderBy: { nome: "asc" },
     take: 100,
   });
@@ -89,6 +94,28 @@ export async function importarPromocoes(formData: FormData): Promise<ResultadoIm
 
   const buffer = Buffer.from(await arquivo.arrayBuffer());
   const resultado = await importarPromocoesDeArquivo(buffer);
+
+  revalidatePath("/catalogo");
+  return resultado;
+}
+
+export async function importarFaixasPreco(formData: FormData): Promise<ResultadoImportacaoFaixas> {
+  await exigirAcessoCRM();
+
+  const arquivo = formData.get("arquivo");
+
+  if (!(arquivo instanceof File) || arquivo.size === 0) {
+    return {
+      criadas: 0,
+      atualizadas: 0,
+      ignoradas: 0,
+      erros: ["Nenhum arquivo selecionado."],
+      colunasEncontradas: [],
+    };
+  }
+
+  const buffer = Buffer.from(await arquivo.arrayBuffer());
+  const resultado = await importarFaixasPrecoDeArquivo(buffer);
 
   revalidatePath("/catalogo");
   return resultado;

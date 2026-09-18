@@ -14,31 +14,35 @@ O CRM vai usar duas IAs diferentes, cada uma para uma finalidade:
 - Pacote `openai` instalado.
 - `src/lib/ia/openai.ts`:
   - `getOpenAIClient()` — cria o cliente a partir de `OPENAI_API_KEY`.
-  - `gerarSimulacaoAmbiente({ imagemAmbiente, descricaoProduto })` — recebe a foto do
-    ambiente (ex: foto da sala enviada pelo cliente no WhatsApp) e uma descrição do
-    produto (ex: "piso porcelanato acetinado bege claro, 60x60"), e retorna a imagem
-    simulada usando o modelo `gpt-image-1` (edição de imagem com prompt, sem precisar
-    de máscara manual).
+  - `gerarSimulacaoAmbiente({ imagemAmbiente, produtoId })` — recebe a foto do ambiente
+    (ex: foto da sala enviada pelo cliente no WhatsApp) e o **ID de um produto já
+    cadastrado no catálogo**, e retorna a imagem simulada usando o modelo `gpt-image-1`
+    (edição de imagem com prompt, sem precisar de máscara manual).
+
+### Restrições já aplicadas (de propósito, por decisão da Victória)
+
+- **Só aceita produtos das categorias `Pisos e Revestimentos` e `Tintas e Complementos`**
+  — qualquer outro produto é rejeitado *antes* de chamar a OpenAI, pra nunca gastar
+  tokens com algo fora do mix da loja. Testado com um produto de Ferragens: rejeitado
+  corretamente com uma mensagem clara.
+- **O prompt instrui explicitamente a não alterar mais nada na imagem** além da
+  superfície-alvo (piso ou parede da tinta) — sem adicionar ou remover móveis, objetos,
+  pessoas, ou mudar iluminação/perspectiva. Isso ainda depende do modelo da OpenAI
+  seguir a instrução corretamente; vale validar visualmente os primeiros resultados
+  reais antes de liberar para uso com clientes.
 
 ### O que falta para ativar
 
 1. **Conseguir a chave da OpenAI**: criar conta em platform.openai.com, gerar uma API
    key em platform.openai.com/api-keys, e colocar em `OPENAI_API_KEY` no `.env` (local)
    e nas variáveis do serviço `crmmorumbi` no Railway (produção).
-2. **Decidir de onde vem a "descrição do produto"** que vira o prompt — provavelmente
-   usar o nome/descrição já cadastrado no catálogo (`Produto.nome`), ou um campo próprio
-   com uma descrição mais visual pensada para IA de imagem (cor, textura, acabamento).
-   Vale considerar usar as fotos já cadastradas em `ImagemProduto` como referência visual
-   adicional, já que o endpoint de edição de imagem também aceita mais de uma imagem de
-   entrada em versões recentes da API.
-3. **Construir a tela/fluxo de uso**: hoje não existe interface para isso. Precisa definir:
+2. **Construir a tela/fluxo de uso**: hoje não existe interface para isso. Precisa definir:
    - Onde o cliente/atendente envia a foto do ambiente (pelo WhatsApp na Fase 1, ou uma
      tela manual no CRM, parecida com a de orçamento).
-   - Quais produtos das categorias Pisos e Revestimentos, Tintas e Complementos e
-     Louças (Banheiro) ficam disponíveis para simulação.
+   - Um seletor de produto que já filtra só pelas categorias simuláveis.
    - Onde a imagem gerada fica salva (sugestão: mesmo padrão de `ImagemProduto`, guardando
      bytes no banco, ligada ao cliente/conversa em vez de ao produto).
-4. **Custo**: geração/edição de imagem na OpenAI é cobrada por imagem — vale simular o
+3. **Custo**: geração/edição de imagem na OpenAI é cobrada por imagem — vale simular o
    custo esperado por atendimento antes de liberar em volume.
 
 ## Agente de vendas (Claude)

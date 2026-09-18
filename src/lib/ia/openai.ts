@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { db } from "@/lib/db";
 
 let cliente: OpenAI | null = null;
 
@@ -21,28 +22,68 @@ export function getOpenAIClient(): OpenAI {
   return cliente;
 }
 
+// Só simulamos produtos dessas categorias — nunca gastamos uma chamada da
+// OpenAI para algo que não vendemos. O nome precisa bater exatamente com o
+// cadastrado em CategoriaProduto (ver prisma/seed.ts).
+const CATEGORIAS_SIMULAVEIS = ["Pisos e Revestimentos", "Tintas e Complementos"] as const;
+
+type CategoriaSimulavel = (typeof CATEGORIAS_SIMULAVEIS)[number];
+
+function montarPrompt(categoria: CategoriaSimulavel, nomeProduto: string): string {
+  const superficie = categoria === "Tintas e Complementos" ? "a cor das paredes" : "o piso/chão";
+  const materialTermo = categoria === "Tintas e Complementos" ? "a tinta" : "o material de piso";
+
+  return [
+    `Substitua APENAS ${superficie} desta foto de ambiente por ${materialTermo}: ${nomeProduto}.`,
+    "Mantenha exatamente iguais e sem nenhuma alteração: todos os outros elementos da cena — móveis, objetos, pessoas, paredes (quando não for o alvo), teto, iluminação, sombras, perspectiva e enquadramento.",
+    "Não adicione nenhum elemento novo. Não remova nenhum elemento existente. Não altere nada além da superfície indicada.",
+  ].join(" ");
+}
+
 export type SimulacaoAmbienteInput = {
   /** Foto do ambiente enviada pelo cliente (ex: foto da sala/banheiro). */
   imagemAmbiente: Buffer;
-  /** Descrição do que aplicar na imagem (ex: "piso porcelanato acetinado bege claro, 60x60"). */
-  descricaoProduto: string;
+  /** ID de um Produto já cadastrado no catálogo (categoria Pisos e Revestimentos ou Tintas e Complementos). */
+  produtoId: string;
 };
 
 /**
- * Gera uma simulação do produto aplicado no ambiente enviado pelo cliente.
+ * Gera uma simulação de um produto do catálogo (piso/revestimento ou tinta)
+ * aplicado no ambiente enviado pelo cliente.
+ *
+ * Restrito de propósito: só aceita produtos das categorias simuláveis, para
+ * nunca gastar chamadas da OpenAI com algo fora do nosso mix. O prompt pede
+ * explicitamente para não alterar mais nada na imagem além da superfície
+ * (piso ou parede) — sem adicionar nem remover elementos.
  *
  * Ainda não usado em produção — preparado para quando a tela de simulação
- * (escolher produto + foto do ambiente) for construída. Usa o endpoint de
- * edição de imagens da OpenAI (gpt-image-1): recebe a foto original e um
- * prompt descrevendo a alteração, sem precisar de uma máscara manual.
+ * (escolher produto + foto do ambiente) for construída.
  */
 export async function gerarSimulacaoAmbiente({
   imagemAmbiente,
-  descricaoProduto,
+  produtoId,
 }: SimulacaoAmbienteInput): Promise<Buffer> {
-  const client = getOpenAIClient();
+  const produto = await db.produto.findUnique({
+    where: { id: produtoId },
+    include: { categoria: true },
+  });
 
-  const prompt = `Aplique de forma realista o seguinte material na área correspondente desta foto de ambiente, mantendo iluminação, perspectiva e móveis originais: ${descricaoProduto}.`;
+  if (!produto || !produto.ativo) {
+    throw new Error("Produto não encontrado ou inativo no catálogo.");
+  }
+
+  const nomeCategoria = produto.categoria?.nome;
+
+  if (!nomeCategoria || !CATEGORIAS_SIMULAVEIS.includes(nomeCategoria as CategoriaSimulavel)) {
+    throw new Error(
+      `Simulação disponível apenas para produtos das categorias ${CATEGORIAS_SIMULAVEIS.join(
+        " e "
+      )}. "${produto.nome}" não está nesse grupo.`
+    );
+  }
+
+  const client = getOpenAIClient();
+  const prompt = montarPrompt(nomeCategoria as CategoriaSimulavel, produto.nome);
 
   const resposta = await client.images.edit({
     model: "gpt-image-1",

@@ -288,7 +288,7 @@ export function montarElementoOrcamento(dados: DadosOrcamentoImagem, formato: "s
       >
         <div style={{ display: "flex", flexDirection: "row", gap: 6 }}>
           <div>(=) Total Orçamento:</div>
-          <div>R$ {formatarMoeda(totalOrcamento)}</div>
+          <div>{`R$ ${formatarMoeda(totalOrcamento)}`}</div>
         </div>
       </div>
 

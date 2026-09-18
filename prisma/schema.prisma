@@ -219,8 +219,25 @@ model Produto {
   criadoEm          DateTime          @default(now())
   atualizadoEm      DateTime          @updatedAt
 
+  promocoes         Promocao[]
+
   @@index([categoriaId])
   @@index([nome])
+}
+
+model Promocao {
+  id               String   @id @default(cuid())
+  produtoId        String
+  produto          Produto  @relation(fields: [produtoId], references: [id])
+  precoPromocional Decimal  @db.Decimal(10, 2)
+  dataInicio       DateTime
+  dataFim          DateTime
+  ativo            Boolean  @default(true)
+  criadoEm         DateTime @default(now())
+
+  @@unique([produtoId, dataInicio, dataFim])
+  @@index([produtoId])
+  @@index([dataInicio, dataFim])
 }
 
 model MensagemChat {

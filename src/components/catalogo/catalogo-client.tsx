@@ -1,10 +1,12 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { importarCatalogo, buscarProdutos } from "@/lib/catalogo/actions";
+import { importarCatalogo, importarPromocoes, buscarProdutos } from "@/lib/catalogo/actions";
 import type { ResultadoImportacao } from "@/lib/catalogo/importar";
+import type { ResultadoImportacaoPromocoes } from "@/lib/catalogo/importarPromocoes";
 
 type Categoria = { id: string; nome: string; ordem: number };
+type Promocao = { precoPromocional: unknown; dataFim: string | Date };
 type Produto = {
   id: string;
   sku: string;
@@ -14,6 +16,7 @@ type Produto = {
   estoqueDisponivel: number | null;
   ativo: boolean;
   categoria: Categoria | null;
+  promocoes: Promocao[];
 };
 
 function formatarPreco(preco: unknown): string {
@@ -36,7 +39,10 @@ export function CatalogoClient({
   const [buscando, setBuscando] = useState(false);
   const [importando, setImportando] = useState(false);
   const [resultado, setResultado] = useState<ResultadoImportacao | null>(null);
+  const [importandoPromocoes, setImportandoPromocoes] = useState(false);
+  const [resultadoPromocoes, setResultadoPromocoes] = useState<ResultadoImportacaoPromocoes | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  const formPromocoesRef = useRef<HTMLFormElement>(null);
 
   async function handleBuscar(novoTermo: string, novaCategoriaId: string) {
     setBuscando(true);
@@ -59,6 +65,20 @@ export function CatalogoClient({
     setResultado(resultadoImportacao);
     setImportando(false);
     formRef.current?.reset();
+    handleBuscar(termo, categoriaId);
+  }
+
+  async function handleImportarPromocoes(evento: React.FormEvent<HTMLFormElement>) {
+    evento.preventDefault();
+    setImportandoPromocoes(true);
+    setResultadoPromocoes(null);
+
+    const formData = new FormData(evento.currentTarget);
+    const resultadoImportacao = await importarPromocoes(formData);
+
+    setResultadoPromocoes(resultadoImportacao);
+    setImportandoPromocoes(false);
+    formPromocoesRef.current?.reset();
     handleBuscar(termo, categoriaId);
   }
 
@@ -107,6 +127,52 @@ export function CatalogoClient({
         </div>
       )}
 
+      <div className="mt-8">
+        <h2 className="text-sm font-semibold text-slate-900">Promoções</h2>
+        <p className="mt-1 text-sm text-slate-500">
+          Suba uma planilha com SKU, preço promocional, data início e data fim. Enquanto a data
+          estiver dentro do período, o preço promocional aparece automaticamente no lugar do preço
+          de tabela — depois do período, volta sozinho ao preço normal, sem precisar apagar nada.
+        </p>
+
+        <form
+          ref={formPromocoesRef}
+          onSubmit={handleImportarPromocoes}
+          className="mt-3 flex flex-wrap items-center gap-3 rounded-md border border-slate-200 bg-white p-4"
+        >
+          <input
+            type="file"
+            name="arquivo"
+            accept=".xlsx,.xls,.csv"
+            required
+            className="text-sm text-slate-700"
+          />
+          <button
+            type="submit"
+            disabled={importandoPromocoes}
+            className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60"
+          >
+            {importandoPromocoes ? "Importando..." : "Importar promoções"}
+          </button>
+        </form>
+
+        {resultadoPromocoes && (
+          <div className="mt-3 rounded-md border border-slate-200 bg-white p-4 text-sm">
+            <p className="font-medium text-slate-800">
+              Importação concluída: {resultadoPromocoes.criados} criada(s),{" "}
+              {resultadoPromocoes.atualizados} atualizada(s), {resultadoPromocoes.ignorados} ignorada(s).
+            </p>
+            {resultadoPromocoes.erros.length > 0 && (
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-amber-700">
+                {resultadoPromocoes.erros.map((erro, indice) => (
+                  <li key={indice}>{erro}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+      </div>
+
       <div className="mt-6 flex flex-wrap gap-3">
         <input
           value={termo}
@@ -152,7 +218,23 @@ export function CatalogoClient({
                 <td className="px-4 py-2 text-slate-600">{produto.sku}</td>
                 <td className="px-4 py-2 text-slate-800">{produto.nome}</td>
                 <td className="px-4 py-2 text-slate-600">{produto.categoria?.nome ?? "—"}</td>
-                <td className="px-4 py-2 text-slate-800">{formatarPreco(produto.precoVenda)}</td>
+                <td className="px-4 py-2">
+                  {produto.promocoes.length > 0 ? (
+                    <span>
+                      <span className="mr-2 text-xs text-slate-400 line-through">
+                        {formatarPreco(produto.precoVenda)}
+                      </span>
+                      <span className="font-semibold text-emerald-600">
+                        {formatarPreco(produto.promocoes[0].precoPromocional)}
+                      </span>
+                      <span className="ml-1 rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">
+                        PROMOÇÃO
+                      </span>
+                    </span>
+                  ) : (
+                    <span className="text-slate-800">{formatarPreco(produto.precoVenda)}</span>
+                  )}
+                </td>
                 <td className="px-4 py-2 text-slate-600">{produto.unidade ?? "—"}</td>
                 <td className="px-4 py-2 text-slate-600">
                   {produto.estoqueDisponivel ?? "—"}

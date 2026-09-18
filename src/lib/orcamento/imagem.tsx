@@ -48,6 +48,19 @@ export function calcularAlturaImagem(quantidadeItens: number, formato: "simples"
   return alturaBase + quantidadeItens * alturaPorLinha;
 }
 
+// Todo <div> com mais de um filho precisa de display "flex" explícito (exigência do Satori,
+// o motor que renderiza esta JSX como imagem). Por segurança, todo container abaixo declara
+// display "flex", mesmo quando hoje só tem um filho — evita esse erro caso o conteúdo mude.
+
+function Rotulo({ texto, valor }: { texto: string; valor: string | number }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "row", gap: 4 }}>
+      <div style={{ display: "flex", fontWeight: 700 }}>{texto}</div>
+      <div style={{ display: "flex" }}>{String(valor)}</div>
+    </div>
+  );
+}
+
 export function montarElementoOrcamento(dados: DadosOrcamentoImagem, formato: "simples" | "detalhado") {
   const valorTotalProdutos = dados.itens.reduce((soma, item) => soma + item.valorUnitario * item.quantidade, 0);
   const descontoTotal = dados.itens.reduce(
@@ -82,8 +95,18 @@ export function montarElementoOrcamento(dados: DadosOrcamentoImagem, formato: "s
           gap: 3,
         }}
       >
-        <div style={{ fontSize: 11, color: CORES.cinza }}>DOCUMENTO AUXILIAR DE VENDA — ORÇAMENTO</div>
-        <div style={{ fontSize: 10, color: CORES.cinza, fontWeight: 700, textAlign: "center" }}>
+        <div style={{ display: "flex", fontSize: 11, color: CORES.cinza }}>
+          DOCUMENTO AUXILIAR DE VENDA — ORÇAMENTO
+        </div>
+        <div
+          style={{
+            display: "flex",
+            fontSize: 10,
+            color: CORES.cinza,
+            fontWeight: 700,
+            textAlign: "center",
+          }}
+        >
           NÃO É DOCUMENTO FISCAL — NÃO É VÁLIDO COMO RECIBO E NÃO COMPROVA PAGAMENTO
         </div>
       </div>
@@ -99,8 +122,10 @@ export function montarElementoOrcamento(dados: DadosOrcamentoImagem, formato: "s
         }}
       >
         <div style={{ display: "flex", flexDirection: "column" }}>
-          <div style={{ fontSize: 30, fontWeight: 800, color: CORES.indigo, letterSpacing: 1 }}>MORUMBI</div>
-          <div style={{ fontSize: 13, fontWeight: 600, color: CORES.azulMarinho }}>
+          <div style={{ display: "flex", fontSize: 30, fontWeight: 800, color: CORES.indigo, letterSpacing: 1 }}>
+            MORUMBI
+          </div>
+          <div style={{ display: "flex", fontSize: 13, fontWeight: 600, color: CORES.azulMarinho }}>
             MATERIAIS PARA CONSTRUÇÃO
           </div>
         </div>
@@ -114,8 +139,8 @@ export function montarElementoOrcamento(dados: DadosOrcamentoImagem, formato: "s
             gap: 2,
           }}
         >
-          <div>Av. 30 de Junho — Presidente Médici/RO</div>
-          <div>Telefone: (69) 3471-2800</div>
+          <div style={{ display: "flex" }}>Av. 30 de Junho — Presidente Médici/RO</div>
+          <div style={{ display: "flex" }}>Telefone: (69) 3471-2800</div>
         </div>
       </div>
 
@@ -128,14 +153,8 @@ export function montarElementoOrcamento(dados: DadosOrcamentoImagem, formato: "s
           marginBottom: 10,
         }}
       >
-        <div style={{ display: "flex", flexDirection: "row", gap: 4 }}>
-          <div style={{ fontWeight: 700 }}>Orçamento nº:</div>
-          <div>{dados.numero}</div>
-        </div>
-        <div style={{ display: "flex", flexDirection: "row", gap: 4 }}>
-          <div style={{ fontWeight: 700 }}>Emissão:</div>
-          <div>{formatarData(dados.criadoEm)}</div>
-        </div>
+        <Rotulo texto="Orçamento nº:" valor={dados.numero} />
+        <Rotulo texto="Emissão:" valor={formatarData(dados.criadoEm)} />
       </div>
 
       <div
@@ -149,24 +168,11 @@ export function montarElementoOrcamento(dados: DadosOrcamentoImagem, formato: "s
           borderBottom: `1px solid ${CORES.borda}`,
         }}
       >
-        <div style={{ display: "flex", flexDirection: "row", gap: 4 }}>
-          <div style={{ fontWeight: 700 }}>Cliente:</div>
-          <div>{dados.clienteNome}</div>
-        </div>
+        <Rotulo texto="Cliente:" valor={dados.clienteNome} />
         {(dados.clienteTelefone || dados.clienteDocumento) && (
           <div style={{ display: "flex", flexDirection: "row", gap: 16 }}>
-            {dados.clienteTelefone && (
-              <div style={{ display: "flex", flexDirection: "row", gap: 4 }}>
-                <div style={{ fontWeight: 700 }}>Telefone:</div>
-                <div>{dados.clienteTelefone}</div>
-              </div>
-            )}
-            {dados.clienteDocumento && (
-              <div style={{ display: "flex", flexDirection: "row", gap: 4 }}>
-                <div style={{ fontWeight: 700 }}>CPF/CNPJ:</div>
-                <div>{dados.clienteDocumento}</div>
-              </div>
-            )}
+            {dados.clienteTelefone && <Rotulo texto="Telefone:" valor={dados.clienteTelefone} />}
+            {dados.clienteDocumento && <Rotulo texto="CPF/CNPJ:" valor={dados.clienteDocumento} />}
           </div>
         )}
       </div>
@@ -182,52 +188,60 @@ export function montarElementoOrcamento(dados: DadosOrcamentoImagem, formato: "s
           padding: "6px 4px",
         }}
       >
-        <div style={{ width: 55 }}>Código</div>
-        <div style={{ width: detalhado ? 300 : 470 }}>Descrição</div>
-        <div style={{ width: 40 }}>UN</div>
+        <div style={{ display: "flex", width: 55 }}>Código</div>
+        <div style={{ display: "flex", width: detalhado ? 300 : 470 }}>Descrição</div>
+        <div style={{ display: "flex", width: 40 }}>UN</div>
         {detalhado ? (
-          <>
-            <div style={{ width: 45, textAlign: "right" }}>Qtde</div>
-            <div style={{ width: 75, textAlign: "right" }}>Vlr. Unit.</div>
-            <div style={{ width: 85, textAlign: "right" }}>Vlr. Un. Desc.</div>
-            <div style={{ width: 80, textAlign: "right" }}>Vlr. Total</div>
-          </>
+          <div style={{ display: "flex", flexDirection: "row" }}>
+            <div style={{ display: "flex", width: 45, justifyContent: "flex-end" }}>Qtde</div>
+            <div style={{ display: "flex", width: 75, justifyContent: "flex-end" }}>Vlr. Unit.</div>
+            <div style={{ display: "flex", width: 85, justifyContent: "flex-end" }}>Vlr. Un. Desc.</div>
+            <div style={{ display: "flex", width: 80, justifyContent: "flex-end" }}>Vlr. Total</div>
+          </div>
         ) : (
-          <div style={{ width: 90, textAlign: "right" }}>Quantidade</div>
+          <div style={{ display: "flex", width: 90, justifyContent: "flex-end" }}>Quantidade</div>
         )}
       </div>
 
-      {dados.itens.map((item, indice) => (
-        <div
-          key={indice}
-          style={{
-            display: "flex",
-            flexDirection: "row",
-            fontSize: 11,
-            padding: "5px 4px",
-            borderBottom: `1px solid #EEF0F4`,
-            backgroundColor: indice % 2 === 0 ? "#ffffff" : CORES.azulClaroFundo,
-          }}
-        >
-          <div style={{ width: 55 }}>{item.sku}</div>
-          <div style={{ width: detalhado ? 300 : 470 }}>{item.nome}</div>
-          <div style={{ width: 40 }}>{item.unidade}</div>
-          {detalhado ? (
-            <>
-              <div style={{ width: 45, textAlign: "right" }}>{item.quantidade}</div>
-              <div style={{ width: 75, textAlign: "right" }}>{formatarMoeda(item.valorUnitario)}</div>
-              <div style={{ width: 85, textAlign: "right" }}>
-                {formatarMoeda(item.valorUnitarioDesconto)}
+      <div style={{ display: "flex", flexDirection: "column" }}>
+        {dados.itens.map((item, indice) => (
+          <div
+            key={indice}
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              fontSize: 11,
+              padding: "5px 4px",
+              borderBottom: `1px solid #EEF0F4`,
+              backgroundColor: indice % 2 === 0 ? "#ffffff" : CORES.azulClaroFundo,
+            }}
+          >
+            <div style={{ display: "flex", width: 55 }}>{item.sku}</div>
+            <div style={{ display: "flex", width: detalhado ? 300 : 470 }}>{item.nome}</div>
+            <div style={{ display: "flex", width: 40 }}>{item.unidade}</div>
+            {detalhado ? (
+              <div style={{ display: "flex", flexDirection: "row" }}>
+                <div style={{ display: "flex", width: 45, justifyContent: "flex-end" }}>
+                  {String(item.quantidade)}
+                </div>
+                <div style={{ display: "flex", width: 75, justifyContent: "flex-end" }}>
+                  {formatarMoeda(item.valorUnitario)}
+                </div>
+                <div style={{ display: "flex", width: 85, justifyContent: "flex-end" }}>
+                  {formatarMoeda(item.valorUnitarioDesconto)}
+                </div>
+                <div style={{ display: "flex", width: 80, justifyContent: "flex-end" }}>
+                  {formatarMoeda(item.valorUnitarioDesconto * item.quantidade)}
+                </div>
               </div>
-              <div style={{ width: 80, textAlign: "right" }}>
-                {formatarMoeda(item.valorUnitarioDesconto * item.quantidade)}
+            ) : (
+              <div style={{ display: "flex", width: 90, justifyContent: "flex-end" }}>
+                {String(item.quantidade)}
               </div>
-            </>
-          ) : (
-            <div style={{ width: 90, textAlign: "right" }}>{item.quantidade}</div>
-          )}
-        </div>
-      ))}
+            )}
+          </div>
+        ))}
+      </div>
 
       <div
         style={{
@@ -240,14 +254,8 @@ export function montarElementoOrcamento(dados: DadosOrcamentoImagem, formato: "s
           borderTop: `1px solid ${CORES.borda}`,
         }}
       >
-        <div style={{ display: "flex", flexDirection: "row", gap: 4 }}>
-          <div style={{ fontWeight: 700 }}>Volumes:</div>
-          <div>{volumes}</div>
-        </div>
-        <div style={{ display: "flex", flexDirection: "row", gap: 4 }}>
-          <div style={{ fontWeight: 700 }}>Valor Total Produtos:</div>
-          <div>{formatarMoeda(valorTotalProdutos)}</div>
-        </div>
+        <Rotulo texto="Volumes:" valor={String(volumes)} />
+        <Rotulo texto="Valor Total Produtos:" valor={formatarMoeda(valorTotalProdutos)} />
       </div>
 
       <div
@@ -259,18 +267,9 @@ export function montarElementoOrcamento(dados: DadosOrcamentoImagem, formato: "s
           marginTop: 6,
         }}
       >
-        <div style={{ display: "flex", flexDirection: "row", gap: 4 }}>
-          <div style={{ fontWeight: 700 }}>(+) Taxa de Entrega:</div>
-          <div>{formatarMoeda(dados.taxaEntrega)}</div>
-        </div>
-        <div style={{ display: "flex", flexDirection: "row", gap: 4 }}>
-          <div style={{ fontWeight: 700 }}>(+) Taxa Financeira:</div>
-          <div>{formatarMoeda(dados.taxaFinanceira)}</div>
-        </div>
-        <div style={{ display: "flex", flexDirection: "row", gap: 4 }}>
-          <div style={{ fontWeight: 700 }}>(-) Desconto:</div>
-          <div>{formatarMoeda(descontoTotal)}</div>
-        </div>
+        <Rotulo texto="(+) Taxa de Entrega:" valor={formatarMoeda(dados.taxaEntrega)} />
+        <Rotulo texto="(+) Taxa Financeira:" valor={formatarMoeda(dados.taxaFinanceira)} />
+        <Rotulo texto="(-) Desconto:" valor={formatarMoeda(descontoTotal)} />
       </div>
 
       <div
@@ -287,8 +286,8 @@ export function montarElementoOrcamento(dados: DadosOrcamentoImagem, formato: "s
         }}
       >
         <div style={{ display: "flex", flexDirection: "row", gap: 6 }}>
-          <div>(=) Total Orçamento:</div>
-          <div>{`R$ ${formatarMoeda(totalOrcamento)}`}</div>
+          <div style={{ display: "flex" }}>(=) Total Orçamento:</div>
+          <div style={{ display: "flex" }}>{`R$ ${formatarMoeda(totalOrcamento)}`}</div>
         </div>
       </div>
 
@@ -303,35 +302,15 @@ export function montarElementoOrcamento(dados: DadosOrcamentoImagem, formato: "s
             color: CORES.corpo,
           }}
         >
-          {dados.formaPagamento && (
-            <div style={{ display: "flex", flexDirection: "row", gap: 4 }}>
-              <div style={{ fontWeight: 700 }}>Forma de Pagamento:</div>
-              <div>{dados.formaPagamento}</div>
-            </div>
-          )}
-          {dados.parcelamento && (
-            <div style={{ display: "flex", flexDirection: "row", gap: 4 }}>
-              <div style={{ fontWeight: 700 }}>Parcelamento:</div>
-              <div>{dados.parcelamento}</div>
-            </div>
-          )}
+          {dados.formaPagamento && <Rotulo texto="Forma de Pagamento:" valor={dados.formaPagamento} />}
+          {dados.parcelamento && <Rotulo texto="Parcelamento:" valor={dados.parcelamento} />}
         </div>
       )}
 
       <div style={{ display: "flex", flexDirection: "column", marginTop: 14, fontSize: 11, gap: 3 }}>
-        {dados.vendedorNome && (
-          <div style={{ display: "flex", flexDirection: "row", gap: 4 }}>
-            <div style={{ fontWeight: 700 }}>Vendedor:</div>
-            <div>{dados.vendedorNome}</div>
-          </div>
-        )}
-        <div style={{ color: CORES.cinza }}>Orçamento válido por 30 dias</div>
-        {dados.observacoes && (
-          <div style={{ display: "flex", flexDirection: "row", gap: 4 }}>
-            <div style={{ fontWeight: 700 }}>Obs:</div>
-            <div>{dados.observacoes}</div>
-          </div>
-        )}
+        {dados.vendedorNome && <Rotulo texto="Vendedor:" valor={dados.vendedorNome} />}
+        <div style={{ display: "flex", color: CORES.cinza }}>Orçamento válido por 30 dias</div>
+        {dados.observacoes && <Rotulo texto="Obs:" valor={dados.observacoes} />}
       </div>
     </div>
   );

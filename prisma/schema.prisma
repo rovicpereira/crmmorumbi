@@ -198,6 +198,31 @@ model TemplateWhatsapp {
   ativo              Boolean  @default(true)
 }
 
+model CategoriaProduto {
+  id       String    @id @default(cuid())
+  nome     String    @unique
+  ordem    Int       @default(0)
+
+  produtos Produto[]
+}
+
+model Produto {
+  id                String            @id @default(cuid())
+  sku               String            @unique
+  nome              String
+  categoriaId       String?
+  categoria         CategoriaProduto? @relation(fields: [categoriaId], references: [id])
+  precoVenda        Decimal           @db.Decimal(10, 2)
+  unidade           String?
+  estoqueDisponivel Int?
+  ativo             Boolean           @default(true)
+  criadoEm          DateTime          @default(now())
+  atualizadoEm      DateTime          @updatedAt
+
+  @@index([categoriaId])
+  @@index([nome])
+}
+
 model MensagemChat {
   id             String   @id @default(cuid())
   remetenteId    String

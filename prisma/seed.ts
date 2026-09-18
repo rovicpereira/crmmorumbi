@@ -11,12 +11,41 @@ const ESTAGIOS_PADRAO = [
   { chave: "perdido", rotulo: "Perdido", ordem: 5, cor: "#ef4444", final: true },
 ];
 
+const CATEGORIAS_PRODUTO = [
+  "Banheiro",
+  "Cozinha e Área de Serviço",
+  "Elétrica",
+  "Ferragens",
+  "Ferramentas",
+  "Forro",
+  "Hidráulica",
+  "Impermeabilizantes",
+  "Materiais Básicos",
+  "Material Elétrico",
+  "Obras de Pedra, Gesso, Cimento",
+  "Padrão",
+  "Pisos e Revestimentos",
+  "Plásticos e suas Obras",
+  "Portas e Esquadrias",
+  "Tintas e Complementos",
+  "Uso e Consumo",
+  "Utilidades Domésticas",
+];
+
 async function main() {
   for (const estagio of ESTAGIOS_PADRAO) {
     await prisma.estagioFunil.upsert({
       where: { chave: estagio.chave },
       update: {},
       create: estagio,
+    });
+  }
+
+  for (const [indice, nome] of CATEGORIAS_PRODUTO.entries()) {
+    await prisma.categoriaProduto.upsert({
+      where: { nome },
+      update: {},
+      create: { nome, ordem: indice + 1 },
     });
   }
 

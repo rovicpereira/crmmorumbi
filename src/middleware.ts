@@ -2,7 +2,7 @@ import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
 import { temAcessoCRM, temAcessoDiretrizes } from "@/lib/permissoes";
 
-const ROTAS_CRM = ["/inbox", "/funil", "/clientes", "/lembretes", "/catalogo", "/orcamentos"];
+const ROTAS_CRM = ["/inbox", "/funil", "/clientes", "/lembretes", "/catalogo", "/orcamentos", "/pedidos"];
 const ROTAS_DIRETRIZES = ["/diretrizes"];
 
 export default withAuth(function middleware(req) {
@@ -26,6 +26,7 @@ export const config = {
     "/lembretes/:path*",
     "/catalogo/:path*",
     "/orcamentos/:path*",
+    "/pedidos/:path*",
     "/diretrizes/:path*",
     "/admin/:path*",
     "/chat/:path*",

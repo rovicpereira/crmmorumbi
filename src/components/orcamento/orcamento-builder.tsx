@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { buscarProdutosParaOrcamento, criarOrcamento } from "@/lib/orcamento/actions";
+import { converterOrcamentoEmPedido } from "@/lib/pedido/actions";
 
 type ResultadoBusca = {
   id: string;
@@ -27,6 +29,8 @@ function formatarMoeda(valor: number): string {
 }
 
 export function OrcamentoBuilder() {
+  const router = useRouter();
+  const [convertendo, setConvertendo] = useState(false);
   const [termo, setTermo] = useState("");
   const [resultados, setResultados] = useState<ResultadoBusca[]>([]);
   const [buscando, setBuscando] = useState(false);
@@ -123,6 +127,17 @@ export function OrcamentoBuilder() {
     }
   }
 
+  async function handleConverterEmPedido() {
+    if (!orcamentoCriado) return;
+    setConvertendo(true);
+    try {
+      const pedido = await converterOrcamentoEmPedido(orcamentoCriado.id);
+      router.push(`/pedidos/${pedido.id}`);
+    } finally {
+      setConvertendo(false);
+    }
+  }
+
   if (orcamentoCriado) {
     return (
       <div className="p-8">
@@ -164,6 +179,20 @@ export function OrcamentoBuilder() {
               Ver imagem detalhada (com preço por item)
             </a>
           </details>
+        </div>
+
+        <div className="mt-4 rounded-md border border-emerald-200 bg-emerald-50 p-4">
+          <p className="text-sm text-emerald-800">
+            Cliente aprovou este orçamento? Converta em pedido para acompanhar expedição,
+            faturamento, caixa e entrega.
+          </p>
+          <button
+            onClick={handleConverterEmPedido}
+            disabled={convertendo}
+            className="mt-2 rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
+          >
+            {convertendo ? "Convertendo..." : "Converter em pedido"}
+          </button>
         </div>
 
         <button

@@ -341,7 +341,8 @@ model Orcamento {
   observacoes      String?
   criadoEm         DateTime @default(now())
 
-  itens ItemOrcamento[]
+  itens  ItemOrcamento[]
+  pedido Pedido?
 
   @@index([vendedorId])
 }
@@ -357,4 +358,34 @@ model ItemOrcamento {
   valorUnitarioDesconto Decimal   @db.Decimal(10, 2)
 
   @@index([orcamentoId])
+}
+
+model Pedido {
+  id          String    @id @default(cuid())
+  numero      Int       @unique @default(autoincrement())
+  orcamentoId String    @unique
+  orcamento   Orcamento @relation(fields: [orcamentoId], references: [id])
+
+  // Checklist, sempre nessa ordem — cada etapa só pode ser marcada se a
+  // anterior já estiver concluída (ver src/lib/pedido/actions.ts).
+  expedicaoConfirmada    Boolean   @default(false)
+  expedicaoConfirmadaEm  DateTime?
+
+  clienteConfirmouData   Boolean   @default(false)
+  clienteConfirmouDataEm DateTime?
+  dataEntregaCombinada   DateTime?
+
+  faturado   Boolean   @default(false)
+  faturadoEm DateTime?
+
+  baixadoCaixa   Boolean   @default(false)
+  baixadoCaixaEm DateTime?
+
+  entregaAgendada   Boolean   @default(false)
+  entregaAgendadaEm DateTime?
+
+  cancelado    Boolean  @default(false)
+  observacoes  String?
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
 }

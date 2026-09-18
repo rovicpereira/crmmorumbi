@@ -11,6 +11,7 @@ const ITENS_NAV_CRM = [
   { href: "/clientes", rotulo: "Clientes" },
   { href: "/lembretes", rotulo: "Lembretes" },
   { href: "/catalogo", rotulo: "Catálogo" },
+  { href: "/orcamentos/novo", rotulo: "Novo orçamento" },
 ];
 
 export function Sidebar() {

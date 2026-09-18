@@ -71,6 +71,7 @@ model Usuario {
   lembretesResponsavel  Lembrete[]      @relation("LembreteResponsavel")
   mensagensChatEnviadas   MensagemChat[] @relation("ChatRemetente")
   mensagensChatRecebidas  MensagemChat[] @relation("ChatDestinatario")
+  orcamentos              Orcamento[]
 }
 
 model Cliente {
@@ -263,6 +264,7 @@ model Produto {
 
   promocoes         Promocao[]
   faixasPreco       FaixaPrecoProduto[]
+  itensOrcamento    ItemOrcamento[]
 
   @@index([categoriaId])
   @@index([nome])
@@ -308,4 +310,37 @@ model MensagemChat {
 
   @@index([remetenteId])
   @@index([destinatarioId])
+}
+
+model Orcamento {
+  id               String   @id @default(cuid())
+  numero           Int      @unique @default(autoincrement())
+  clienteNome      String?
+  clienteTelefone  String?
+  clienteDocumento String?
+  vendedorId       String?
+  vendedor         Usuario? @relation(fields: [vendedorId], references: [id])
+  taxaEntrega      Decimal  @default(0) @db.Decimal(10, 2)
+  taxaFinanceira   Decimal  @default(0) @db.Decimal(10, 2)
+  formaPagamento   String?
+  parcelamento     String?
+  observacoes      String?
+  criadoEm         DateTime @default(now())
+
+  itens ItemOrcamento[]
+
+  @@index([vendedorId])
+}
+
+model ItemOrcamento {
+  id                    String    @id @default(cuid())
+  orcamentoId           String
+  orcamento             Orcamento @relation(fields: [orcamentoId], references: [id])
+  produtoId             String
+  produto               Produto   @relation(fields: [produtoId], references: [id])
+  quantidade            Decimal   @db.Decimal(10, 2)
+  valorUnitario         Decimal   @db.Decimal(10, 2)
+  valorUnitarioDesconto Decimal   @db.Decimal(10, 2)
+
+  @@index([orcamentoId])
 }

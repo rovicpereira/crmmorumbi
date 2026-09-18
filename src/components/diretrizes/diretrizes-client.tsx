@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { importarDiretrizes } from "@/lib/diretrizes/actions";
 import type { ResultadoImportacaoDiretrizes } from "@/lib/diretrizes/importar";
+import { RegraEntregaForm } from "@/components/diretrizes/regra-entrega-form";
 
 type Regra = {
   descontoMaximoPercentual: unknown;
@@ -29,7 +30,20 @@ function formatarValor(valor: unknown): string {
   return Number(valor).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-export function DiretrizesClient({ categorias }: { categorias: Categoria[] }) {
+type RegraEntrega = {
+  valorMinimoEntregaGratuita: unknown;
+  pesoMinimoEntregaKg: unknown;
+  raioEntregaGratuitaKm: unknown;
+  valorPorKmRodado: unknown;
+} | null;
+
+export function DiretrizesClient({
+  categorias,
+  regraEntrega,
+}: {
+  categorias: Categoria[];
+  regraEntrega: RegraEntrega;
+}) {
   const router = useRouter();
   const [importando, setImportando] = useState(false);
   const [resultado, setResultado] = useState<ResultadoImportacaoDiretrizes | null>(null);
@@ -139,6 +153,8 @@ export function DiretrizesClient({ categorias }: { categorias: Categoria[] }) {
           </tbody>
         </table>
       </div>
+
+      <RegraEntregaForm regraEntrega={regraEntrega} />
     </div>
   );
 }

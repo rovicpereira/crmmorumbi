@@ -238,6 +238,16 @@ model DiretrizComercialTemporaria {
   @@index([dataInicio, dataFim])
 }
 
+model RegraEntrega {
+  id                         String   @id @default("global")
+  valorMinimoEntregaGratuita Decimal? @db.Decimal(10, 2)
+  pesoMinimoEntregaKg        Decimal? @db.Decimal(10, 2)
+  raioEntregaGratuitaKm      Decimal? @db.Decimal(10, 2)
+  valorPorKmRodado           Decimal? @db.Decimal(10, 2)
+  criadoEm                   DateTime @default(now())
+  atualizadoEm               DateTime @updatedAt
+}
+
 model Produto {
   id                String            @id @default(cuid())
   sku               String            @unique

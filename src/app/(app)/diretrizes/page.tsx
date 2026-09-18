@@ -14,16 +14,19 @@ export default async function DiretrizesPage() {
 
   const agora = new Date();
 
-  const categorias = await db.categoriaProduto.findMany({
-    orderBy: { ordem: "asc" },
-    include: {
-      diretriz: true,
-      diretrizesTemporarias: {
-        where: { ativo: true, dataInicio: { lte: agora }, dataFim: { gte: agora } },
-        take: 1,
+  const [categorias, regraEntrega] = await Promise.all([
+    db.categoriaProduto.findMany({
+      orderBy: { ordem: "asc" },
+      include: {
+        diretriz: true,
+        diretrizesTemporarias: {
+          where: { ativo: true, dataInicio: { lte: agora }, dataFim: { gte: agora } },
+          take: 1,
+        },
       },
-    },
-  });
+    }),
+    db.regraEntrega.findUnique({ where: { id: "global" } }),
+  ]);
 
-  return <DiretrizesClient categorias={categorias} />;
+  return <DiretrizesClient categorias={categorias} regraEntrega={regraEntrega} />;
 }

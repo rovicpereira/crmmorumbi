@@ -130,27 +130,40 @@ export function OrcamentoBuilder() {
           Orçamento nº {orcamentoCriado.numero} criado!
         </h1>
         <p className="mt-1 text-sm text-slate-500">
-          Por padrão, envie o modelo simples (sem preço por item). Se o cliente pedir o detalhamento,
-          use o modelo detalhado.
+          Envie esta imagem para o cliente. Ela mostra só o valor total — sem preço unitário nem
+          desconto por item.
         </p>
 
-        <div className="mt-4 flex gap-3">
+        <div className="mt-4 max-w-2xl overflow-hidden rounded-md border border-slate-200 shadow-sm">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={`/api/orcamentos/${orcamentoCriado.id}/imagem?formato=simples`}
+            alt={`Orçamento nº ${orcamentoCriado.numero}`}
+            className="w-full"
+          />
+        </div>
+
+        <div className="mt-4 flex items-center gap-3">
           <a
             href={`/api/orcamentos/${orcamentoCriado.id}/imagem?formato=simples`}
-            target="_blank"
-            rel="noreferrer"
+            download={`orcamento-${orcamentoCriado.numero}.png`}
             className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
           >
-            Ver imagem (simples)
+            Baixar imagem
           </a>
-          <a
-            href={`/api/orcamentos/${orcamentoCriado.id}/imagem?formato=detalhado`}
-            target="_blank"
-            rel="noreferrer"
-            className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-          >
-            Ver imagem (detalhada)
-          </a>
+          <details className="text-sm">
+            <summary className="cursor-pointer font-medium text-slate-600 hover:text-slate-800">
+              Cliente pediu o preço de cada item? Veja a versão detalhada
+            </summary>
+            <a
+              href={`/api/orcamentos/${orcamentoCriado.id}/imagem?formato=detalhado`}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-2 inline-block rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Ver imagem detalhada (com preço por item)
+            </a>
+          </details>
         </div>
 
         <button

@@ -71,6 +71,7 @@ export async function buscarProdutos(termo: string, categoriaId?: string) {
       categoria: true,
       promocoes: filtroPromocaoAtivaAgora(),
       faixasPreco: { orderBy: { quantidadeMinima: "asc" } },
+      _count: { select: { imagens: true } },
     },
     orderBy: { nome: "asc" },
     take: 100,

@@ -13,6 +13,7 @@ export default async function CatalogoPage() {
           take: 1,
         },
         faixasPreco: { orderBy: { quantidadeMinima: "asc" } },
+        _count: { select: { imagens: true } },
       },
       orderBy: { nome: "asc" },
       take: 100,

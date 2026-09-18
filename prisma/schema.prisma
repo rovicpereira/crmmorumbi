@@ -265,9 +265,23 @@ model Produto {
   promocoes         Promocao[]
   faixasPreco       FaixaPrecoProduto[]
   itensOrcamento    ItemOrcamento[]
+  imagens           ImagemProduto[]
 
   @@index([categoriaId])
   @@index([nome])
+}
+
+model ImagemProduto {
+  id          String   @id @default(cuid())
+  produtoId   String
+  produto     Produto  @relation(fields: [produtoId], references: [id])
+  dados       Bytes
+  mimeType    String
+  nomeArquivo String?
+  ordem       Int      @default(0)
+  criadoEm    DateTime @default(now())
+
+  @@index([produtoId])
 }
 
 model Promocao {

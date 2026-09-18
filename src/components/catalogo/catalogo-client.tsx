@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Link from "next/link";
 import { importarCatalogo, importarPromocoes, importarFaixasPreco, buscarProdutos } from "@/lib/catalogo/actions";
 import type { ResultadoImportacao } from "@/lib/catalogo/importar";
 import type { ResultadoImportacaoPromocoes } from "@/lib/catalogo/importarPromocoes";
@@ -20,6 +21,7 @@ type Produto = {
   categoria: Categoria | null;
   promocoes: Promocao[];
   faixasPreco: FaixaPreco[];
+  _count: { imagens: number };
 };
 
 function formatarFaixa(faixa: FaixaPreco): string {
@@ -284,6 +286,7 @@ export function CatalogoClient({
               <th className="px-4 py-2">Preço</th>
               <th className="px-4 py-2">Unidade</th>
               <th className="px-4 py-2">Estoque</th>
+              <th className="px-4 py-2">Fotos</th>
             </tr>
           </thead>
           <tbody>
@@ -322,11 +325,19 @@ export function CatalogoClient({
                 <td className="px-4 py-2 text-slate-600">
                   {produto.estoqueDisponivel ?? "—"}
                 </td>
+                <td className="px-4 py-2">
+                  <Link
+                    href={`/catalogo/produtos/${produto.id}/imagens`}
+                    className="text-xs font-medium text-brand-600 hover:underline"
+                  >
+                    {produto._count.imagens > 0 ? `${produto._count.imagens} foto(s)` : "Adicionar"}
+                  </Link>
+                </td>
               </tr>
             ))}
             {produtos.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-slate-500">
+                <td colSpan={7} className="px-4 py-6 text-center text-slate-500">
                   {buscando ? "Buscando..." : "Nenhum produto encontrado."}
                 </td>
               </tr>
